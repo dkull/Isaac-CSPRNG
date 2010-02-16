@@ -1,18 +1,7 @@
-""" Port of ISAAC CSPRNG http://github.com/bai/crypt-isaac/
-    http://en.wikipedia.org/wiki/ISAAC_(cipher)
-
-    Seeding from /dev/urandom or /dev/random. If these do not exist
-    Python's builtin random.randint() will be used.
-    
-    ATTENTION: Output of any single integer is limited to 32 bits.
-    Usage:
+"""    Usage:
             import Isaac()
             x = Isaac.Isaac()
-            x.rand(42) -> 0 <= y <= 41
-
-    Tanel Liiv
-    kuratkull AT kuratull.com
-    14.02.2010
+            y = x.rand(42) # 0<= y <= 41
 """
 import random
 import os
