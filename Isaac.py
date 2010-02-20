@@ -1,7 +1,10 @@
-"""    Usage:
+"""
+        Isaac CSPRNG
+        Usage:
             import Isaac()
-            x = Isaac.Isaac()
+            x = Isaac.Isaac(noblock=False)
             y = x.rand(42) # 0<= y <= 41
+        Warning: If you don't have /dev/random(noblock=False) nor /dev/urandom(noblock=True) Pythons builtin Random() will be used
 """
 import random
 import os
@@ -28,7 +31,8 @@ class Isaac(object):
             for x in xrange(256):
                 z = f.read(4)
                 # String to binary and back to larger integer
-                y = int("".join(map(lambda x: bin(ord(x))[2:].rjust(8, "0"), list(z))), base=2)
+                y = int("".join([bin(ord(i))[2:].rjust(8,"0") for i in list(z)]), base=2)
+
                 self.randrsl[x] = y
             f.close()
         else:
