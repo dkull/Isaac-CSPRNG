@@ -8,6 +8,9 @@
 """
 import random
 import os
+from math import ceil
+from hashlib import sha512
+
 try:
     import psyco
     psyco.full()
@@ -15,7 +18,7 @@ except:
     pass
 
 class Isaac(object):
-    def __init__(self, noblock = True):
+    def __init__(self, noblock = False, miniseed = True):
         self.mm = [0]*256
         self.randrsl = [0]*256
         self.randcnt = None
@@ -24,33 +27,56 @@ class Isaac(object):
         self.cc = 0
         random.seed()
 
-        # If noblock is set to "False" on init it will seed from /dev/random
+        # If noblock is set to "True" on init it will seed from /dev/urandom
         rnd_source = '/dev/urandom' if noblock else '/dev/random'
         if os.path.exists(rnd_source):
             f = open(rnd_source, 'r')
-            for x in xrange(256):
-                z = f.read(4)
-                # String to binary and back to larger integer
-                y = int("".join([bin(ord(i))[2:].rjust(8,"0") for i in list(z)]), base=2)
-
-                self.randrsl[x] = y
+            if miniseed:
+                # Reads 16 bytes = 128 bits and expands it to 8192 bits with hashing
+                z = f.read(16)
+                digests = ""
+                for i in xrange(2048/128): # ensures we run the hash enough times to get 8192 bits
+                    z = sha512(z).hexdigest()
+                    digests += z
+                out = ""
+                marker = 0
+                for i in xrange(0,len(digests), 8):
+                    y = int(bin(int(digests[i:i+8], base=16))[2:].rjust(32, "0"), base=2)
+                    self.randrsl[marker] = y
+                    marker += 1
+                    
+            else:
+                # Reads 4 bytes for every integer. => 4*256= 1024 bytes=8192 bits
+                for x in xrange(256):
+                    z = f.read(4)
+                    # String to binary and back to larger integer
+                    y = int("".join([bin(ord(i))[2:].rjust(8,"0") for i in list(z)]), base=2)
+                    self.randrsl[x] = y
             f.close()
         else:
             for x in xrange(256):
-                self.randrsl[x] = random.randint(1,4294967294)
+                self.randrsl[x] = random.__randint__(1,4294967294)
             
-        self.randinit(True)
+        self.__randinit__(True)
 
     def rand(self, num):
         if self.randcnt == 1:
-            self.isaac()
+            self.__isaac__()
             self.randcnt = 256
 
         self.randcnt -= 1
 
         return self.randrsl[self.randcnt]%num
 
-    def isaac(self):
+    def bits(self, num):
+        count = ceil(num/32.0)
+        bitlist = ""
+        
+        for x in xrange(count):
+            bitlist += (bin(self.rand(4294967294))[2:].rjust(32, "0"))
+        return bitlist[:num]
+
+    def __isaac__(self):
         x = 0
         y = 0
         i = 0
@@ -85,7 +111,7 @@ class Isaac(object):
             self.randrsl[i] = self.bb = (self.mm[(y>>10)&255] + x ) & 0xffffffff
             i += 1
 
-    def randinit(self, flag):
+    def __randinit__(self, flag):
         a=b=c=d=e=f=g=h = int("9e3779b9", base=16)
         self.aa = self.bb = self.cc = 0
 
@@ -205,6 +231,5 @@ class Isaac(object):
                 self.mm[i+6]=g
                 self.mm[i+7]=h
                 i += 8
-        self.isaac()
+        self.__isaac__()
         self.randcnt=256
-
