@@ -1,20 +1,18 @@
-Port of ISAAC CSPRNG - http://github.com/bai/crypt-isaac/
+Port of ISAAC CSPRNG - http://burtleburtle.net/bob/rand/isaac.html
 http://en.wikipedia.org/wiki/ISAAC_(cipher)
- 
 
-This is an implementation of the cryptographically secure pseudorandom 
-number generator which is suitable for getting random data for programs 
-needing high quality and secure random data - for GnuPG, Diffie-Hellman 
+This is an implementation of the cryptographically secure pseudorandom
+number generator which is suitable for getting random data for programs
+needing high quality and secure random data - for GnuPG, Diffie-Hellman
 and others.
 
-Seeding from /dev/urandom or /dev/random. If these do not exist
-Python's builtin random.randint() will be used.
-In this case the potential security level is reduced.
-
 ATTENTION: Output of any single integer is limited to 32 bits.
+
+Stretches a seed or key consisting of 256 32b ints (not quite indefinitely).
+
 Usage:
-        import Isaac()
-        x = Isaac.Isaac()
+        import Isaac
+        x = Isaac.Isaac(seed_vector or None)
         x.rand(42) -> 0 <= y <= 41
- 
+
 This software is released under the MIT License
