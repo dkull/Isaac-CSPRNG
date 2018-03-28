@@ -1,5 +1,6 @@
 """
-        Isaac CSPRNG
+
+        BSD-Licensed implementation of the Isaac CSPRNG for Python3
         Usage:
             import Isaac()
             x = Isaac.Isaac(seed_vector = 32bint*256)
