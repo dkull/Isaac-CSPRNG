@@ -1,13 +1,11 @@
 This is an implementation of the cryptographically secure pseudorandom
-number generator which is suitable for getting random data for programs
-needing high quality and secure random data - for GnuPG, Diffie-Hellman
-and others.
+number generator - Isaac.
 http://en.wikipedia.org/wiki/ISAAC_(cipher)
 http://burtleburtle.net/bob/rand/isaac.html
 
-NOTE: This software was totally broken from February 2010. Fixed to match reference code in Feb 2020
+NOTE: This software was completely broken since February 2010. It was fixed to match the reference code in Feb 2020
 
-Compatible with: http://burtleburtle.net/bob/c/readable.c
+The generated output is compatible with: http://burtleburtle.net/bob/c/readable.c
 NOTE: To verify compatible output you need to change line 13 in readable.c on 64 bit platforms
 from _unsigned long int_ to just _unsigned int_. This is because the original code was written for 32bit platforms,
 and the size of longs is different. The original code in readable.c expects long to be 4 bytes, but it is 8 bytes
@@ -43,5 +41,5 @@ Test:
     This matches the output from readable.c (after the required modifications on 64 bit systems)
     Verify that the output matches AFTER 256 ints are generated, since
     there is branching logic on that amount of ints. Both the reference
-    code and this code generate 2 * 256 bytes as test output. If they
+    code and this code generate 2 * 256 integers as test output. If they
     match then all is good.
