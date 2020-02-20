@@ -1,18 +1,40 @@
-Port of ISAAC CSPRNG - http://burtleburtle.net/bob/rand/isaac.html
-http://en.wikipedia.org/wiki/ISAAC_(cipher)
-
 This is an implementation of the cryptographically secure pseudorandom
 number generator which is suitable for getting random data for programs
 needing high quality and secure random data - for GnuPG, Diffie-Hellman
 and others.
+http://en.wikipedia.org/wiki/ISAAC_(cipher)
+http://burtleburtle.net/bob/rand/isaac.html
 
-ATTENTION: Output of any single integer is limited to 32 bits.
+NOTE: This software was totally broken from February 2010. Fixed to match reference code in Feb 2020
 
-Stretches a seed or key consisting of 256 32b ints (not quite indefinitely).
+Compatible with: http://burtleburtle.net/bob/c/readable.c
+NOTE: To verify compatible output you need to change line 13 in readable.c on 64 bit platforms
+from _unsigned long int_ to just _unsigned int_. This is because the original code was written for 32bit platforms,
+and the size of longs is different. The original code in readable.c expects long to be 4 bytes, but it is 8 bytes
+on modern 64 bit systems, this breaks the right-shifts in the reference code.
+
+The input seed vector is int[256]
 
 Usage:
-        import Isaac
-        x = Isaac.Isaac(seed_vector or None)
-        x.rand(42) -> 0 <= y <= 41
+    import Isaac
+    x = Isaac.Isaac(seed_vector OR no argument defaults to [0]*256)
+    x.rand(42) -> 0 <= y <= 41
 
-This software is released under the MIT License
+Test:
+    python3 Isaac.py
+    e7391a22c5b3629f49977abbae35645a556be149999a55c7032ca07c6a5cfa4b
+    9fcd03158a0115299d71675bc45025b5516afb30e30877797520a7379908d557
+    23c341b030e36d4471152c3fa98a59c4286283704cca15d8bd63db83587d2372
+    083bd97f92adb61f0340294811f6098563e67ef791b9b804e78908e59b166b00
+    b23be1568048b98adee921d9cdc4d141336242b6c0ee6db1619611d0b6d5a7e0
+    c781b52b2a1e843d1848da867f6a3667ea75427a789cf820be466b8e972b2af8
+    42b36db74987d66b768503384df9d6f8eaf07b28426a6915a1a5b243e38bcb1d
+    2c5761a09991f4e9f7b0ebd1075e93afc9d812358b012c51b67ec2c980839149
+    ee6e55f6c5228cc0fd2cc2c2d182c91aa300c2346682f85804db4b0fa45d547e
+    [...]
+    
+    This matches the output from readable.c (after the required modifications on 64 bit systems)
+    Verify that the output matches AFTER 256 ints are generated, since
+    there is branching logic on that amount of ints. Both the reference
+    code and this code generate 2 * 256 bytes as test output. If they
+    match then all is good.

@@ -10,199 +10,146 @@
 from math import ceil
 
 
+mod = 2**32
+def mix(a,b,c,d,e,f,g,h):
+    a ^= 0xffffffff & b << 11
+    d = (d + a) % mod
+    b = (b + c) % mod
+    b ^= 0x3fffffff & (c >> 2)
+    e = (e + b) % mod
+    c = (c + d) % mod
+    c ^= 0xffffffff & d << 8
+    f = (f + c) % mod
+    d = (d + e) % mod
+    d ^= (e >> 16)
+    g = (g + d) % mod
+    e = (e + f) % mod
+    e ^= 0xffffffff & f << 10
+    h = (h + e) % mod
+    f = (f + g) % mod
+    f ^= 0x0fffffff & (g >> 4)
+    a = (a + f) % mod
+    g = (g + h) % mod
+    g ^= 0xffffffff & h << 8
+    b = (b + g) % mod
+    h = (h + a) % mod
+    h ^= 0x007fffff & (a >> 9)
+    c = (c + h) % mod
+    a = (a + b) % mod
+    return a,b,c,d,e,f,g,h
+
+
 class Isaac(object):
     def __init__(self, seed_vector=[0] * 256):
         self.mm = [0] * 256
         self.randrsl = seed_vector
-        self.randcnt = None
+        self.randcnt = 0
         self.aa = 0
         self.bb = 0
         self.cc = 0
 
         self.__randinit__(True)
 
-    def rand(self, num):
-        if self.randcnt == 1:
+    def rand(self, mod=2**32):
+        if self.randcnt == 256:
             self.__isaac__()
-            self.randcnt = 256
-
-        self.randcnt -= 1
-
-        return self.randrsl[self.randcnt] % num
-
-    def bits(self, num):
-        count = ceil(num / 32)
-        bitlist = ""
-
-        for x in range(count):
-            bitlist += (bin(self.rand(4294967294))[2:].rjust(32, "0"))
-        return bitlist[:num]
+            self.randcnt = 0
+        res = self.randrsl[self.randcnt] % mod
+        self.randcnt += 1
+        return res
 
     def __isaac__(self):
-        x = 0
-        y = 0
-        i = 0
-
         self.cc += 1
         self.bb += self.cc
         self.bb &= 0xffffffff
 
-        while i < 256:
-            x = self.mm[i]
-            self.aa = (self.mm[(i + 128) & 255] +
-                       (self.aa ^ (self.aa << 13))) & 0xffffffff
-            self.mm[i] = y = (self.mm[(x >> 2) & 255] +
-                              self.aa + self.bb) & 0xffffffff
-            self.randrsl[i] = self.bb = (
-                self.mm[(y >> 10) & 255] + x) & 0xffffffff
-            i += 1
-
-            x = self.mm[i]
-            self.aa = (self.mm[(i + 128) & 255] + (self.aa ^
-                                                   (0x03ffffff & (self.aa >> 6)))) & 0xffffffff
-            self.mm[i] = y = (self.mm[(x >> 2) & 255] +
-                              self.aa + self.bb) & 0xffffffff
-            self.randrsl[i] = self.bb = (
-                self.mm[(y >> 10) & 255] + x) & 0xffffffff
-            i += 1
-
-            x = self.mm[i]
-            self.aa = (self.mm[(i + 128) & 255] +
-                       (self.aa ^ (self.aa << 2))) & 0xffffffff
-            self.mm[i] = y = (self.mm[(x >> 2) & 255] +
-                              self.aa + self.bb) & 0xffffffff
-            self.randrsl[i] = self.bb = (
-                self.mm[(y >> 10) & 255] + x) & 0xffffffff
-            i += 1
-
-            x = self.mm[i]
-            self.aa = (self.mm[(i + 128) & 255] + (self.aa ^
-                                                   (0x0000ffff & (self.aa >> 16)))) & 0xffffffff
-            self.mm[i] = y = (self.mm[(x >> 2) & 255] +
-                              self.aa + self.bb) & 0xffffffff
-            self.randrsl[i] = self.bb = (
-                self.mm[(y >> 10) & 255] + x) & 0xffffffff
-            i += 1
+        for i in range(256):
+            x= self.mm[i]
+            switch = i % 4
+            xorwith = None
+            if switch == 0:
+                 xorwith = (self.aa << 13) % mod
+            elif switch == 1:
+                 xorwith = self.aa >> 6
+            elif switch == 2:
+                 xorwith = (self.aa << 2) % mod
+            elif switch == 3:
+                 xorwith = self.aa >> 16
+            else:
+                raise Exception("math is broken")
+            self.aa = self.aa ^ xorwith
+            self.aa = (self.mm[(i + 128) % 256] + self.aa) % mod
+            y = self.mm[i] = (self.mm[(x >> 2) % 256] + self.aa + self.bb) % mod
+            self.randrsl[i] = self.bb = (self.mm[(y >> 10) % 256] + x) % mod
 
     def __randinit__(self, flag):
-        a = b = c = d = e = f = g = h = int("9e3779b9", base=16)
+        a = b = c = d = e = f = g = h = 0x7e3779b9
         self.aa = self.bb = self.cc = 0
 
         for x in range(4):
-            a ^= b << 1
-            d += a
-            b += c
-            b ^= 0x3fffffff & (c >> 2)
-            e += b
-            c += d
-            c ^= d << 8
-            f += c
-            d += e
-            d ^= 0x0000ffff & (e >> 16)
-            g += d
-            e += f
-            e ^= f << 10
-            h += e
-            f += g
-            f ^= 0x0fffffff & (g >> 4)
-            a += f
-            g += h
-            g ^= h << 8
-            b += g
-            h += a
-            h ^= 0x007fffff & (a >> 9)
-            c += h
-            a += b
+            a,b,c,d,e,f,g,h = mix(a,b,c,d,e,f,g,h)
 
         i = 0
         while i < 256:
             if flag:
-                a += int(self.randrsl[i])
-                b += int(self.randrsl[i + 1])
-                c += self.randrsl[i + 2]
-                d += self.randrsl[i + 3]
-                e += self.randrsl[i + 4]
-                f += self.randrsl[i + 5]
-                g += self.randrsl[i + 6]
-                h += self.randrsl[i + 7]
+                a = (a + self.randrsl[i]) % mod
+                b = (b + self.randrsl[i + 1]) % mod
+                c = (c + self.randrsl[i + 2]) % mod
+                d = (d + self.randrsl[i + 3]) % mod
+                e = (e + self.randrsl[i + 4]) % mod
+                f = (f + self.randrsl[i + 5]) % mod
+                g = (g + self.randrsl[i + 6]) % mod
+                h = (h + self.randrsl[i + 7]) % mod
 
-            a ^= b << 11
-            d += a
-            b += c
-            b ^= 0x3fffffff & (c >> 2)
-            e += b
-            c += d
-            c ^= d << 8
-            f += c
-            d += e
-            d ^= 0x0000ffff & (e >> 16)
-            g += d
-            e += f
-            e ^= f << 10
-            h += e
-            f += g
-            f ^= 0x0fffffff & (g >> 4)
-            a += f
-            g += h
-            g ^= h << 8
-            b += g
-            h += a
-            h ^= 0x007fffff & (a >> 9)
-            c += h
-            a += b
-            self.mm[i] = a
-            self.mm[i + 1] = b
-            self.mm[i + 2] = c
-            self.mm[i + 3] = d
-            self.mm[i + 4] = e
-            self.mm[i + 5] = f
-            self.mm[i + 6] = g
-            self.mm[i + 7] = h
+            a,b,c,d,e,f,g,h = mix(a,b,c,d,e,f,g,h)
+            self.mm[i:i+7+1] = a,b,c,d,e,f,g,h
             i += 8
 
         if flag:
             i = 0
             while i < 256:
-                a += self.mm[i]
-                b += self.mm[i + 1]
-                c += self.mm[i + 2]
-                d += self.mm[i + 3]
-                e += self.mm[i + 4]
-                f += self.mm[i + 5]
-                g += self.mm[i + 6]
-                h += self.mm[i + 7]
-                a ^= b << 11
-                d += a
-                b += c
+                a = (a + self.mm[i]) % mod
+                b = (b + self.mm[i + 1]) % mod
+                c = (c + self.mm[i + 2]) % mod
+                d = (d + self.mm[i + 3]) % mod
+                e = (e + self.mm[i + 4]) % mod
+                f = (f + self.mm[i + 5]) % mod
+                g = (g + self.mm[i + 6]) % mod
+                h = (h + self.mm[i + 7]) % mod
+                a ^= 0xffffffff & b << 11
+                d = (d + a) % mod
+                b = (b + c) % mod
                 b ^= 0x3fffffff & (c >> 2)
-                e += b
-                c += d
-                c ^= d << 8
-                f += c
-                d += e
-                d ^= 0x0000ffff & (e >> 16)
-                g += d
-                e += f
-                e ^= f << 10
-                h += e
-                f += g
+                e = (e + b) % mod
+                c = (c + d) % mod
+                c ^= 0xffffffff & d << 8
+                f = (f + c) % mod
+                d = (d + e) % mod
+                d ^= (e >> 16)
+                g = (g + d) % mod
+                e = (e + f) % mod
+                e ^= 0xffffffff & f << 10
+                h = (h + e) % mod
+                f = (f + g) % mod
                 f ^= 0x0fffffff & (g >> 4)
-                a += f
-                g += h
-                g ^= h << 8
-                b += g
-                h += a
+                a = (a + f) % mod
+                g = (g + h) % mod
+                g ^= 0xffffffff & h << 8
+                b = (b + g) % mod
+                h = (h + a) % mod
                 h ^= 0x007fffff & (a >> 9)
-                c += h
-                a += b
-                self.mm[i] = a
-                self.mm[i + 1] = b
-                self.mm[i + 2] = c
-                self.mm[i + 3] = d
-                self.mm[i + 4] = e
-                self.mm[i + 5] = f
-                self.mm[i + 6] = g
-                self.mm[i + 7] = h
+                c = (c + h) % mod
+                a = (a + b) % mod
+                self.mm[i:i+7+1] = a,b,c,d,e,f,g,h
                 i += 8
         self.__isaac__()
         self.randcnt = 256
+
+if __name__ == "__main__":
+    x = Isaac()
+    for i in range(512):
+        res = x.rand(2**64)
+        if i > 0 and i % 8 == 0:
+            print()
+        print("{:08x}".format(res), end='')
+    print()
