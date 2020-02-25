@@ -1,6 +1,7 @@
 """
 
-        BSD-Licensed implementation of the Isaac CSPRNG for Python3
+        3-Clause BSD Licensed implementation of the Isaac CSPRNG for Python3
+        https://opensource.org/licenses/BSD-3-Clause
         Usage:
             import Isaac()
             x = Isaac.Isaac(seed_vector = 32bint*256)
